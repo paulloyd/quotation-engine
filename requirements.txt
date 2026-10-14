@@ -1,0 +1,8 @@
+streamlit>=1.50
+pandas
+fastapi
+uvicorn
+pydantic
+pytest
+httpx
+anthropic        # optional: only needed for LLM extraction mode (set ANTHROPIC_API_KEY)

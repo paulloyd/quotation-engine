@@ -1,0 +1,5 @@
+From: ray@crateandship.example
+Subject: Packaging restock
+
+Quote FOB please: PKG-CTN-L x 5000, PKG-TAPE-48 x 6000, PKG-STR-WRP x 600.
+Ray

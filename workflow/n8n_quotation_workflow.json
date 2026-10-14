@@ -1,0 +1,106 @@
+{
+  "name": "RFQ to Draft Quote (human approval required)",
+  "nodes": [
+    {
+      "parameters": {"mailbox": "INBOX", "postProcessAction": "read", "options": {}},
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "New RFQ Email (IMAP)",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "credentials": {"imap": {"id": "REPLACE_ME", "name": "IMAP account"}}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/rfq",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"sender\": $json.from, \"subject\": $json.subject, \"body\": $json.textPlain } }}",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Create Draft Quote (Quotation Engine API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [
+            {
+              "id": "c1000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "NEEDS_INFO",
+              "operator": {"type": "string", "operation": "equals"}
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Missing Information?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "quotes-bot@example.com",
+        "toEmail": "sales-desk@example.com",
+        "subject": "=Quote #{{ $json.quote_id }} needs customer info ({{ $json.flags.join(', ') }})",
+        "emailFormat": "text",
+        "text": "=The engine could not fully price this RFQ.\nFlags: {{ $json.flags.join(', ') }}\nOpen the review console and use 'Request info from customer'.",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "Notify Sales: Info Needed",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1040, 200],
+      "credentials": {"smtp": {"id": "REPLACE_ME", "name": "SMTP account"}}
+    },
+    {
+      "parameters": {
+        "fromEmail": "quotes-bot@example.com",
+        "toEmail": "sales-desk@example.com",
+        "subject": "=Quote #{{ $json.quote_id }} ready for approval - ${{ $json.total_usd }} ({{ $json.status }})",
+        "emailFormat": "text",
+        "text": "=Draft quote #{{ $json.quote_id }} is waiting for human approval.\nFlags: {{ $json.flags.length ? $json.flags.join(', ') : 'none' }}\nApprove in the review console (or POST /quotes/{{ $json.quote_id }}/approve).",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000005",
+      "name": "Notify Reviewer: Approval Needed",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1040, 400],
+      "credentials": {"smtp": {"id": "REPLACE_ME", "name": "SMTP account"}}
+    },
+    {
+      "parameters": {
+        "content": "## Human-in-the-loop by design\nThis workflow NEVER emails a customer. It creates a draft quote and notifies a person. Sending happens only after approval in the review console (or POST /quotes/{id}/approve). Quotes >= $25k require a manager.",
+        "height": 140,
+        "width": 420
+      },
+      "id": "a1000000-0000-4000-8000-000000000006",
+      "name": "Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [500, 80]
+    }
+  ],
+  "connections": {
+    "New RFQ Email (IMAP)": {"main": [[{"node": "Create Draft Quote (Quotation Engine API)", "type": "main", "index": 0}]]},
+    "Create Draft Quote (Quotation Engine API)": {"main": [[{"node": "Missing Information?", "type": "main", "index": 0}]]},
+    "Missing Information?": {"main": [
+      [{"node": "Notify Sales: Info Needed", "type": "main", "index": 0}],
+      [{"node": "Notify Reviewer: Approval Needed", "type": "main", "index": 0}]
+    ]}
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "active": false
+}

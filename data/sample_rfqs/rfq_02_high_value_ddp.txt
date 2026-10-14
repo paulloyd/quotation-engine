@@ -1,0 +1,12 @@
+From: marcus@solarbridge.example
+Subject: Solar order Q4
+
+Hello,
+
+Need pricing for:
+20 x SOL-INV-5K
+10 x SOL-BAT-10K
+200 x SOL-PNL-550
+Delivered duty paid to Savannah (DDP).
+
+Marcus
